@@ -13,9 +13,9 @@ import (
 
 const (
 	FileName  = "text.txt"
-	PxWidth   = 1080
-	PxHeight  = 720
-	Framerate = "10"
+	PxWidth   = 1920
+	PxHeight  = 1080
+	Framerate = "60"
 )
 
 var numImage = 0
@@ -24,6 +24,9 @@ var x = 0
 var y = 0
 
 func main() {
+	os.RemoveAll("./images/")
+	os.Mkdir("./images/", os.ModePerm)
+
 	file, err := os.ReadFile(FileName)
 	if err != nil {
 		fmt.Print(err)
