@@ -1,11 +1,10 @@
 package main
 
 import (
-	"fmt"
+	"golang.org/x/image/bmp"
 	"image"
 	"image/color"
 	"image/draw"
-	"image/jpeg"
 	"os"
 	"os/exec"
 	"strconv"
@@ -15,7 +14,7 @@ const (
 	FileName  = "text.txt"
 	PxWidth   = 1920
 	PxHeight  = 1080
-	Framerate = "60"
+	Framerate = "30"
 )
 
 var numImage = 0
@@ -24,12 +23,18 @@ var x = 0
 var y = 0
 
 func main() {
-	os.RemoveAll("./images/")
-	os.Mkdir("./images/", os.ModePerm)
+	err := os.RemoveAll("./images/")
+	if err != nil {
+		panic(err)
+	}
+	err = os.Mkdir("./images/", os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
 
 	file, err := os.ReadFile(FileName)
 	if err != nil {
-		fmt.Print(err)
+		panic(err)
 	}
 
 	imgFile, img := newFrame()
@@ -47,11 +52,7 @@ func main() {
 
 			if x == PxWidth {
 				if y == PxHeight {
-					opt := jpeg.Options{
-						Quality: 100,
-					}
-
-					err = jpeg.Encode(imgFile, img, &opt)
+					err = bmp.Encode(imgFile, img)
 					if err != nil {
 						panic(err)
 					}
@@ -69,11 +70,7 @@ func main() {
 		}
 	}
 
-	opt := jpeg.Options{
-		Quality: 100,
-	}
-
-	err = jpeg.Encode(imgFile, img, &opt)
+	err = bmp.Encode(imgFile, img)
 	if err != nil {
 		panic(err)
 	}
@@ -82,14 +79,14 @@ func main() {
 	toVideo()
 }
 
-func newFrame() (imgFile *os.File, img *image.RGBA) {
+func newFrame() (imgFile *os.File, img *image.Gray) {
 	numImage++
 
 	upLeft := image.Point{}
 	lowRight := image.Point{X: PxWidth, Y: PxHeight}
 
-	img = image.NewRGBA(image.Rectangle{Min: upLeft, Max: lowRight})
-	filename := "./images/img-" + strconv.Itoa(numImage) + ".jpg"
+	img = image.NewGray(image.Rectangle{Min: upLeft, Max: lowRight})
+	filename := "./images/img-" + strconv.Itoa(numImage) + ".bmp"
 
 	imgFile, err := os.Create(filename)
 	if err != nil {
@@ -101,7 +98,7 @@ func newFrame() (imgFile *os.File, img *image.RGBA) {
 }
 
 func toVideo() {
-	cmd := exec.Command("ffmpeg", "-framerate", Framerate, "-i", "img-%d.jpg", "output.mp4")
+	cmd := exec.Command("ffmpeg", "-framerate", Framerate, "-i", "img-%d.bmp", "-crf", "0", "output.mp4")
 	cmd.Dir = "images/"
 	out, err := cmd.Output()
 	if err != nil {
