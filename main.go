@@ -50,6 +50,11 @@ func main() {
 
 			img.Set(x, y, PxColor)
 
+			if len(file) == i+1 && j == 7 {
+				println("last")
+				img.Set(x+1, y, color.RGBA{R: 255, G: 0, B: 0})
+			}
+
 			if x == PxWidth {
 				if y == PxHeight {
 					err = bmp.Encode(imgFile, img)

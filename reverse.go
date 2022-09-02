@@ -5,9 +5,10 @@ import (
 	"golang.org/x/image/bmp"
 	"image"
 	"image/draw"
+	"math"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"strconv"
 )
 
 func reverse() {
@@ -68,16 +69,37 @@ func reverse() {
 			}
 		}
 
-		println(bin)
+		var binary []byte
+
+		for i := 0; i < len(bin); i++ {
+			var oct string
+			for j := 0; j < 8; j++ {
+				oct = oct + strconv.Itoa(bin[i+j])
+			}
+			println(oct)
+			octInt, _ := strconv.Atoi(oct)
+			decimal := convertBinaryToDecimal(octInt)
+			binary = append(binary, uint8(decimal))
+
+			i = i + 8
+		}
+
+		//TODO: Fix the error : "panic: runtime error: index out of range [264880] with length 264880"
+
+		println(string(binary))
 	}
 }
 
-func visit(files *[]string) filepath.WalkFunc {
-	return func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			panic(err)
-		}
-		*files = append(*files, path)
-		return nil
+func convertBinaryToDecimal(number int) int {
+	decimal := 0
+	counter := 0.0
+	remainder := 0
+
+	for number != 0 {
+		remainder = number % 10
+		decimal += remainder * int(math.Pow(2.0, counter))
+		number = number / 10
+		counter++
 	}
+	return decimal
 }
