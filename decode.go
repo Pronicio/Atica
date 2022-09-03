@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-func reverse() {
+func decode() {
 	cmd := exec.Command("ffmpeg", "-i", "output.mp4", "-pix_fmt", "bgr8", "./imgs/img-%d.bmp")
 	cmd.Dir = "out/"
 	err := cmd.Run()
@@ -23,6 +23,8 @@ func reverse() {
 	if err != nil {
 		panic(err)
 	}
+
+	var binary []byte
 
 	for _, file := range files {
 		data, err := os.Open("./out/imgs/" + file.Name())
@@ -69,25 +71,36 @@ func reverse() {
 			}
 		}
 
-		var binary []byte
+		println(len(bin))
 
-		for i := 0; i < len(bin); i++ {
+		for i := 0; i < len(bin); i += 8 {
+			end := false
+			if i+8 >= len(bin) {
+				i--
+				end = true
+			}
+
 			var oct string
 			for j := 0; j < 8; j++ {
 				oct = oct + strconv.Itoa(bin[i+j])
 			}
-			println(oct)
+
 			octInt, _ := strconv.Atoi(oct)
+			if octInt == 11111111 {
+				continue
+			}
+
 			decimal := convertBinaryToDecimal(octInt)
 			binary = append(binary, uint8(decimal))
 
-			i = i + 8
+			if end {
+				println(i, i+8)
+				break
+			}
 		}
-
-		//TODO: Fix the error : "panic: runtime error: index out of range [264880] with length 264880"
-
-		println(string(binary))
 	}
+
+	writeInFile(binary)
 }
 
 func convertBinaryToDecimal(number int) int {
@@ -102,4 +115,11 @@ func convertBinaryToDecimal(number int) int {
 		counter++
 	}
 	return decimal
+}
+
+func writeInFile(bin []byte) {
+	err := os.WriteFile("./out/result.txt", bin, 0644)
+	if err != nil {
+		panic(err)
+	}
 }
