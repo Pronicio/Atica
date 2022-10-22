@@ -4,7 +4,7 @@ const (
 	FileName  = "text.txt"
 	PxWidth   = 1080
 	PxHeight  = 720
-	Framerate = "10"
+	Framerate = "30"
 )
 
 var numImage = 0

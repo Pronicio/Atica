@@ -23,6 +23,9 @@ func encode() {
 
 	imgFile, img := newFrame()
 
+	sizeBoard := 30
+	sizeBlock := PxWidth / sizeBoard
+
 	for i := 0; i < len(file); i++ {
 		code := file[i]
 		//print(code, " ")
@@ -37,29 +40,32 @@ func encode() {
 			panic(err)
 		}
 
-		PxColor := color.RGBA{R: code, G: random1, B: random2, A: 255}
-		img.Set(x, y, PxColor)
+		Color := color.RGBA{R: code, G: random1, B: random2, A: 255}
+
+		draw.Draw(img, image.Rect(x, y, x+sizeBlock, y+sizeBlock),
+			&image.Uniform{Color}, image.ZP, draw.Src)
+
+		x += sizeBlock
 
 		if len(file) == i+1 {
-			img.Set(x+1, y, color.RGBA{R: 255, G: 255, B: 255, A: 255})
+			draw.Draw(img, image.Rect(x, y, x+sizeBlock, y+sizeBlock),
+				&image.Uniform{color.RGBA{R: 255, G: 255, B: 255, A: 255}}, image.ZP, draw.Src)
 		}
 
 		if x == PxWidth {
 			if y == PxHeight {
+				x = 0
+				y = 0
+
 				err = bmp.Encode(imgFile, img)
 				if err != nil {
 					panic(err)
 				}
-
 				imgFile, img = newFrame()
-				x = 0
-				y = 0
 			} else {
 				x = 0
-				y++
+				y += sizeBlock
 			}
-		} else {
-			x++
 		}
 	}
 
