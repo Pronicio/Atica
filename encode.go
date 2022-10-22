@@ -1,10 +1,12 @@
 package main
 
 import (
+	"crypto/rand"
 	"golang.org/x/image/bmp"
 	"image"
 	"image/color"
 	"image/draw"
+	"math/big"
 	"os"
 	"os/exec"
 	"strconv"
@@ -12,13 +14,7 @@ import (
 
 func encode() {
 	err := os.RemoveAll("./images/")
-	if err != nil {
-		panic(err)
-	}
 	err = os.Mkdir("./images/", os.ModePerm)
-	if err != nil {
-		panic(err)
-	}
 
 	file, err := os.ReadFile(FileName)
 	if err != nil {
@@ -28,37 +24,42 @@ func encode() {
 	imgFile, img := newFrame()
 
 	for i := 0; i < len(file); i++ {
-		for j := 0; j < 8; j++ {
-			zeroOrOne := file[i] >> (7 - j) & 1
-			PxColor := color.RGBA{R: 0, G: 0, B: 0}
+		code := file[i]
+		//print(code, " ")
 
-			if zeroOrOne == 0 {
-				PxColor = color.RGBA{R: 255, G: 255, B: 255}
-			}
+		nBig, err := rand.Int(rand.Reader, big.NewInt(255))
+		random1 := uint8(nBig.Int64())
 
-			img.Set(x, y, PxColor)
+		nBig, err = rand.Int(rand.Reader, big.NewInt(255))
+		random2 := uint8(nBig.Int64())
 
-			if len(file) == i+1 && j == 7 {
-				img.Set(x+1, y, color.RGBA{R: 255, G: 0, B: 0})
-			}
+		if err != nil {
+			panic(err)
+		}
 
-			if x == PxWidth {
-				if y == PxHeight {
-					err = bmp.Encode(imgFile, img)
-					if err != nil {
-						panic(err)
-					}
+		PxColor := color.RGBA{R: code, G: random1, B: random2, A: 255}
+		img.Set(x, y, PxColor)
 
-					imgFile, img = newFrame()
-					x = 0
-					y = 0
-				} else {
-					x = 0
-					y++
+		if len(file) == i+1 {
+			img.Set(x+1, y, color.RGBA{R: 255, G: 255, B: 255, A: 255})
+		}
+
+		if x == PxWidth {
+			if y == PxHeight {
+				err = bmp.Encode(imgFile, img)
+				if err != nil {
+					panic(err)
 				}
+
+				imgFile, img = newFrame()
+				x = 0
+				y = 0
 			} else {
-				x++
+				x = 0
+				y++
 			}
+		} else {
+			x++
 		}
 	}
 
@@ -71,13 +72,13 @@ func encode() {
 	toVideo()
 }
 
-func newFrame() (imgFile *os.File, img *image.Gray) {
+func newFrame() (imgFile *os.File, img *image.RGBA) {
 	numImage++
 
 	upLeft := image.Point{}
 	lowRight := image.Point{X: PxWidth, Y: PxHeight}
 
-	img = image.NewGray(image.Rectangle{Min: upLeft, Max: lowRight})
+	img = image.NewRGBA(image.Rectangle{Min: upLeft, Max: lowRight})
 	filename := "./images/img-" + strconv.Itoa(numImage) + ".bmp"
 
 	imgFile, err := os.Create(filename)
