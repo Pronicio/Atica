@@ -1,12 +1,10 @@
 package main
 
 import (
-	"crypto/rand"
 	"golang.org/x/image/bmp"
 	"image"
 	"image/color"
 	"image/draw"
-	"math/big"
 	"os"
 	"os/exec"
 	"strconv"
@@ -23,31 +21,34 @@ func encode() {
 
 	imgFile, img := newFrame()
 
-	sizeBoard := 30
+	sizeBoard := 15
 	sizeBlock := PxWidth / sizeBoard
 
-	for i := 0; i < len(file); i++ {
-		code := file[i]
-		//print(code, " ")
+	for i := 0; i < len(file); i += 3 {
+		var code1 byte = 0
+		var code2 byte = 0
+		var code3 byte = 0
 
-		nBig, err := rand.Int(rand.Reader, big.NewInt(255))
-		random1 := uint8(nBig.Int64())
-
-		nBig, err = rand.Int(rand.Reader, big.NewInt(255))
-		random2 := uint8(nBig.Int64())
-
-		if err != nil {
-			panic(err)
+		if !(i >= len(file)) {
+			code1 = file[i]
 		}
 
-		Color := color.RGBA{R: code, G: random1, B: random2, A: 255}
+		if !(i+1 >= len(file)) {
+			code2 = file[i+1]
+		}
+
+		if !(i+2 >= len(file)) {
+			code3 = file[i+2]
+		}
+
+		Color := color.RGBA{R: code1, G: code2, B: code3, A: 255}
 
 		draw.Draw(img, image.Rect(x, y, x+sizeBlock, y+sizeBlock),
 			&image.Uniform{Color}, image.ZP, draw.Src)
 
 		x += sizeBlock
 
-		if len(file) == i+1 {
+		if i >= len(file) || i+1 >= len(file) || i+2 >= len(file) || i+3 >= len(file) {
 			draw.Draw(img, image.Rect(x, y, x+sizeBlock, y+sizeBlock),
 				&image.Uniform{color.RGBA{R: 255, G: 255, B: 255, A: 255}}, image.ZP, draw.Src)
 		}
@@ -99,9 +100,8 @@ func newFrame() (imgFile *os.File, img *image.RGBA) {
 func toVideo() {
 	cmd := exec.Command("ffmpeg", "-framerate", Framerate, "-i", "img-%d.bmp", "-crf", "0", "output.mp4")
 	cmd.Dir = "images/"
-	out, err := cmd.Output()
+	err := cmd.Run()
 	if err != nil {
 		panic(err)
 	}
-	println(out)
 }
