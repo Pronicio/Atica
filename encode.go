@@ -1,13 +1,18 @@
 package main
 
 import (
-	"golang.org/x/image/bmp"
+	"github.com/sergeymakinen/go-bmp"
 	"image"
 	"image/color"
 	"image/draw"
 	"os"
 	"os/exec"
 	"strconv"
+)
+
+var (
+	Black = color.Gray16{Y: 0}
+	White = color.Gray16{Y: 0xffff}
 )
 
 func encode() {
@@ -21,51 +26,65 @@ func encode() {
 
 	imgFile, img := newFrame()
 
-	sizeBoard := 15
+	sizeBoard := 160
 	sizeBlock := PxWidth / sizeBoard
 
-	for i := 0; i < len(file); i += 3 {
-		var code1 byte = 0
-		var code2 byte = 0
-		var code3 byte = 0
+	for i := 0; i < len(file); i++ {
+		bin := decimalToBinary(file[i])
 
-		if !(i >= len(file)) {
-			code1 = file[i]
-		}
+		for _, letter := range bin {
+			binNumber := string(letter)
 
-		if !(i+1 >= len(file)) {
-			code2 = file[i+1]
-		}
-
-		if !(i+2 >= len(file)) {
-			code3 = file[i+2]
-		}
-
-		Color := color.RGBA{R: code1, G: code2, B: code3, A: 255}
-
-		draw.Draw(img, image.Rect(x, y, x+sizeBlock, y+sizeBlock),
-			&image.Uniform{Color}, image.ZP, draw.Src)
-
-		x += sizeBlock
-
-		if i >= len(file) || i+1 >= len(file) || i+2 >= len(file) || i+3 >= len(file) {
-			draw.Draw(img, image.Rect(x, y, x+sizeBlock, y+sizeBlock),
-				&image.Uniform{color.RGBA{R: 255, G: 255, B: 255, A: 255}}, image.ZP, draw.Src)
-		}
-
-		if x == PxWidth {
-			if y == PxHeight {
-				x = 0
-				y = 0
-
-				err = bmp.Encode(imgFile, img)
-				if err != nil {
-					panic(err)
-				}
-				imgFile, img = newFrame()
+			if binNumber == "1" {
+				draw.Draw(img, image.Rect(x, y, x+sizeBlock, y+sizeBlock),
+					&image.Uniform{White}, image.ZP, draw.Src)
 			} else {
-				x = 0
-				y += sizeBlock
+				draw.Draw(img, image.Rect(x, y, x+sizeBlock, y+sizeBlock),
+					&image.Uniform{Black}, image.ZP, draw.Src)
+			}
+
+			x += sizeBlock
+
+			if x == PxWidth {
+				if y == PxHeight {
+					x = 0
+					y = 0
+
+					err = bmp.Encode(imgFile, img)
+					if err != nil {
+						panic(err)
+					}
+					imgFile, img = newFrame()
+				} else {
+					x = 0
+					y += sizeBlock
+				}
+			}
+		}
+
+		// Last loop :
+		if i == (len(file) - 1) {
+			for j := 0; j < 8; j++ {
+				draw.Draw(img, image.Rect(x, y, x+sizeBlock, y+sizeBlock),
+					&image.Uniform{White}, image.ZP, draw.Src)
+
+				x += sizeBlock
+
+				if x == PxWidth {
+					if y == PxHeight {
+						x = 0
+						y = 0
+
+						err = bmp.Encode(imgFile, img)
+						if err != nil {
+							panic(err)
+						}
+						imgFile, img = newFrame()
+					} else {
+						x = 0
+						y += sizeBlock
+					}
+				}
 			}
 		}
 	}
@@ -79,13 +98,18 @@ func encode() {
 	toVideo()
 }
 
-func newFrame() (imgFile *os.File, img *image.RGBA) {
+func newFrame() (imgFile *os.File, img *image.Paletted) {
 	numImage++
+
+	palette := color.Palette([]color.Color{
+		color.Gray16{Y: 0},
+		color.Gray16{Y: 0xffff},
+	})
 
 	upLeft := image.Point{}
 	lowRight := image.Point{X: PxWidth, Y: PxHeight}
 
-	img = image.NewRGBA(image.Rectangle{Min: upLeft, Max: lowRight})
+	img = image.NewPaletted(image.Rectangle{Min: upLeft, Max: lowRight}, palette)
 	filename := "./images/img-" + strconv.Itoa(numImage) + ".bmp"
 
 	imgFile, err := os.Create(filename)
@@ -104,4 +128,8 @@ func toVideo() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func decimalToBinary(decimal byte) string {
+	return strconv.FormatInt(int64(decimal), 2)
 }
