@@ -11,6 +11,8 @@ import (
 )
 
 var (
+	NumImage = 0
+
 	Black = color.Gray16{Y: 0}
 	White = color.Gray16{Y: 0xffff}
 )
@@ -37,10 +39,10 @@ func encode() {
 
 			if binNumber == "1" {
 				draw.Draw(img, image.Rect(x, y, x+sizeBlock, y+sizeBlock),
-					&image.Uniform{White}, image.ZP, draw.Src)
+					&image.Uniform{C: White}, image.Point{}, draw.Src)
 			} else {
 				draw.Draw(img, image.Rect(x, y, x+sizeBlock, y+sizeBlock),
-					&image.Uniform{Black}, image.ZP, draw.Src)
+					&image.Uniform{C: Black}, image.Point{}, draw.Src)
 			}
 
 			x += sizeBlock
@@ -66,7 +68,7 @@ func encode() {
 		if i == (len(file) - 1) {
 			for j := 0; j < 8; j++ {
 				draw.Draw(img, image.Rect(x, y, x+sizeBlock, y+sizeBlock),
-					&image.Uniform{White}, image.ZP, draw.Src)
+					&image.Uniform{C: White}, image.Point{}, draw.Src)
 
 				x += sizeBlock
 
@@ -93,13 +95,16 @@ func encode() {
 	if err != nil {
 		panic(err)
 	}
-	defer imgFile.Close()
+	err = imgFile.Close()
+	if err != nil {
+		panic(err)
+	}
 
 	toVideo()
 }
 
 func newFrame() (imgFile *os.File, img *image.Paletted) {
-	numImage++
+	NumImage++
 
 	palette := color.Palette([]color.Color{
 		color.Gray16{Y: 0},
@@ -110,7 +115,7 @@ func newFrame() (imgFile *os.File, img *image.Paletted) {
 	lowRight := image.Point{X: PxWidth, Y: PxHeight}
 
 	img = image.NewPaletted(image.Rectangle{Min: upLeft, Max: lowRight}, palette)
-	filename := "./images/img-" + strconv.Itoa(numImage) + ".bmp"
+	filename := "./images/img-" + strconv.Itoa(NumImage) + ".bmp"
 
 	imgFile, err := os.Create(filename)
 	if err != nil {

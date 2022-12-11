@@ -7,8 +7,6 @@ const (
 	Framerate = "30"
 )
 
-var numImage = 0
-
 var x = 0
 var y = 0
 
